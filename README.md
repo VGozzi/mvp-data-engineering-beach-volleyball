@@ -87,6 +87,9 @@ confere que a tabela tem as mesmas 76.756 linhas do arquivo.
 | `silver` | `partida`, `atleta_partida` | dados limpos e tipados, sem exclusão de linhas; exceções viram flags |
 | `gold` | `dim_data`, `dim_torneio`, `dim_atleta`, `dim_fase`, `fato_partida`, `fato_atleta_partida` | esquema estrela, pronto para as perguntas |
 
+![Tabelas partida e atleta_partida no schema silver](screenshots/silver_tabelas.png)
+![Quatro dimensões e dois fatos no schema gold, com os comentários do catálogo](screenshots/gold_tabelas.png)
+
 ### Silver: duas tabelas
 
 Na fonte, cada linha é uma partida e os quatro atletas ficam em colunas. Isso serve para ler o
@@ -362,8 +365,6 @@ e constraints persistem entre execuções e só precisam ser reaplicados quando 
 Cada notebook de carga termina com uma validação (chaves únicas, integridade entre tabelas e
 contagem de linhas contra a origem), e uma tarefa do Job só passa se ela passar.
 
-![Tabelas partida e atleta_partida no schema silver](screenshots/silver_tabelas.png)
-![Quatro dimensões e dois fatos no schema gold, com os comentários do catálogo](screenshots/gold_tabelas.png)
 ![Validação do load_gold dentro do Job: 12 asserts e contagens](screenshots/validacao_gold.png)
 
 
@@ -395,14 +396,37 @@ O que não deu problema também foi verificado: não há duplicata exata, as cat
 e estatísticas seguem um único formato, o que permitiu `cast` estrito no tratamento em vez de
 `try_cast`.
 
-Algumas saídas do notebook, na ordem das seções:
+Algumas saídas do notebook, com a seção de onde vêm:
 
-![2.1: das 255 combinações de colunas, 36 são chaves únicas e duas são mínimas](screenshots/diagnostico_chaves_candidatas.png)
-![2.1: o par de Tenerife 2001, mesmas quatro atletas na mesma rodada, que exige match_num na chave](screenshots/diagnostico_tenerife.png)
-![3: ausência por coluna; nenhum NULL real, só o texto "NA"](screenshots/diagnostico_ausentes.png)
-![4.1: formato de cada campo; só score e rank fogem do padrão](screenshots/diagnostico_formatos.png)
-![5.4: 1.067 partidas incompletas e as 12 em que o placar contradiz o vencedor](screenshots/diagnostico_placar.png)
-![5.5: as 7 partidas com a mesma dupla dos dois lados](screenshots/diagnostico_dupla_repetida.png)
+**Seção 2.1, chaves candidatas.** Das 255 combinações de colunas testadas, 36 identificam a partida e
+duas são mínimas; a adotada é `tournament + date + gender + bracket + match_num`.
+
+![Chaves candidatas](screenshots/diagnostico_chaves_candidatas.png)
+
+**Seção 2.1, o par de Tenerife 2001.** As mesmas quatro atletas na mesma rodada, com placar e duração
+diferentes; é o que obriga `match_num` a entrar na chave.
+
+![Par de Tenerife](screenshots/diagnostico_tenerife.png)
+
+**Seção 3, valores ausentes.** Nenhuma coluna tem NULL real; toda ausência é o texto `"NA"`, e as
+estatísticas de jogo faltam em 81% das linhas.
+
+![Valores ausentes por coluna](screenshots/diagnostico_ausentes.png)
+
+**Seção 4.1, formato dos campos.** Uma coluna representante de cada tipo contra o padrão esperado; só
+`score` (1,39%) e `w_rank` (39,24%) fogem, e os dois de propósito.
+
+![Formato dos campos](screenshots/diagnostico_formatos.png)
+
+**Seção 5.4, placar e vencedor.** 75.667 placares completos, 1.067 partidas incompletas e as 12 em
+que o placar contradiz o vencedor registrado.
+
+![Placar e vencedor](screenshots/diagnostico_placar.png)
+
+**Seção 5.5, dupla repetida nos dois lados.** As 7 partidas em que a dupla vencedora é igual à
+perdedora; seis sem placar (bye ou W.O.) e uma com jogo real (Aydin 2018).
+
+![Dupla repetida](screenshots/diagnostico_dupla_repetida.png)
 
 ## Análise de Dados
 

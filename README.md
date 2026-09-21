@@ -72,10 +72,9 @@ necessária porque alguns nomes de atleta trazem apelido entre aspas. Três colu
 acrescentadas (`_ingestao_ts`, `_arquivo_origem`, `_camada`), e a validação no fim do notebook
 confere que a tabela tem as mesmas 76.756 linhas do arquivo.
 
-![Tabela vb_matches no schema bronze](screenshots/bronze_tabela.png)
-
 > A carga é feita com `overwrite`, aqui e nas camadas seguintes, porque a fonte é um arquivo estático,publicado > publicado uma vez e sem atualização.
 
+![Tabela vb_matches no schema bronze](screenshots/bronze_tabela.png)
 
 ## Modelagem e Catálogo de Dados
 
@@ -86,9 +85,6 @@ confere que a tabela tem as mesmas 76.756 linhas do arquivo.
 | `bronze` | `vb_matches` | cópia fiel do CSV, tudo como texto |
 | `silver` | `partida`, `atleta_partida` | dados limpos e tipados, sem exclusão de linhas; exceções viram flags |
 | `gold` | `dim_data`, `dim_torneio`, `dim_atleta`, `dim_fase`, `fato_partida`, `fato_atleta_partida` | esquema estrela, pronto para as perguntas |
-
-![Tabelas partida e atleta_partida no schema silver](screenshots/silver_tabelas.png)
-![Quatro dimensões e dois fatos no schema gold, com os comentários do catálogo](screenshots/gold_tabelas.png)
 
 ### Silver: duas tabelas
 
@@ -117,6 +113,8 @@ inválida, idade atípica) viram flags, sem excluir nenhuma linha.
     
 Uma dessas exceções definiu a chave de `atleta_partida`: em 7 partidas a fonte registra a mesma dupla como vencedora e perdedora (bye ou W.O.), então a chave é `(id_partida, id_atleta, vencedor)`, e não só partida e atleta.
 
+![Tabelas partida e atleta_partida no schema silver](screenshots/silver_tabelas.png)
+
 ### Gold: esquema estrela
 
 A gold, construída pelo notebook [`load_gold`](notebooks/load_gold.ipynb), é um esquema estrela
@@ -127,8 +125,8 @@ viraram dimensões porque teriam uma coluna só, e ficam como atributos de `dim_
 dimensões acrescentaria joins sem acrescentar informação. Tabelas de agregados também não foram
 criadas, porque as seis consultas rodam direto nos fatos.
 
-![Diagrama de relacionamentos de fato_partida: dim_torneio, dim_data e dim_fase](screenshots/modelo_estrela_partida.png)
-![Diagrama de relacionamentos de fato_atleta_partida: fato_partida, dim_atleta, dim_torneio e dim_data](screenshots/modelo_estrela_atleta_partida.png)
+
+![Quatro dimensões e dois fatos no schema gold, com os comentários do catálogo](screenshots/gold_tabelas.png)
 
 | Tabela | Grão | Perguntas |
 |---|---|---|
@@ -139,6 +137,9 @@ criadas, porque as seis consultas rodam direto nos fatos.
 | `dim_atleta` | um atleta | 3, 6 |
 | `dim_fase` | uma chave de torneio (`bracket`) e a fase que ela representa | 1 |
 
+![Diagrama de relacionamentos de fato_partida: dim_torneio, dim_data e dim_fase](screenshots/modelo_estrela_partida.png)
+![Diagrama de relacionamentos de fato_atleta_partida: fato_partida, dim_atleta, dim_torneio e dim_data](screenshots/modelo_estrela_atleta_partida.png)
+
 ### Catálogo de dados
 
 O catálogo é aplicado no Unity Catalog pelo notebook [`catalogo`](notebooks/catalogo.ipynb): um
@@ -147,14 +148,14 @@ cada tabela e coluna, `NOT NULL` nas chaves e as constraints de chave primária 
 conferência no fim do notebook lê `information_schema.columns` e confirma que as 9 tabelas têm todas
 as colunas comentadas.
 
-![Colunas de gold.fato_partida no Catalog Explorer, com tipo, comentário e marcação de PK e FK](screenshots/catalogo_fato_partida.png)
-![Continuação: seeds e flags de gold.fato_partida](screenshots/catalogo_fato_partida_flags.png)
-
 As chaves primárias e estrangeiras declaradas pelo catálogo são as que o diagrama de
 relacionamentos da seção anterior desenha.
 
 A transcrição abaixo traz, por tabela, o grão e a origem, e por coluna o tipo, a descrição com o
 domínio e, onde a coluna não vem direto da fonte, a regra que a produz.
+
+![Colunas de gold.fato_partida no Catalog Explorer, com tipo, comentário e marcação de PK e FK](screenshots/catalogo_fato_partida.png)
+![Continuação: seeds e flags de gold.fato_partida](screenshots/catalogo_fato_partida_flags.png)
 
 #### `bronze.vb_matches`
 
